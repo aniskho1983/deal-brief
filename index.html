@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Deal Brief — By Proper</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #c9a84c;
+      --gold-dim: rgba(201,168,76,0.15);
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #1a1a1a;
+      --border: #222;
+      --text: #e8e8e8;
+      --muted: #666;
+      --danger: #c0392b;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+    .view { display: none; min-height: 100vh; flex-direction: column; }
+    .view.active { display: flex; }
+    #view-result.active { height: 100vh; min-height: 0; overflow: hidden; }
+
+    /* ── HEADER ── */
+    .app-header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,10,0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.25rem; height: 56px;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .header-brand { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--gold); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+    .header-brand span { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.14em; display: block; margin-top: -3px; }
+    .header-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+    /* ── SETUP VIEW ── */
+    #view-setup { align-items: center; justify-content: center; padding: 2rem 1.5rem; }
+    .setup-card { width: 100%; max-width: 480px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem 2rem; }
+    .wordmark { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 600; color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.25rem; }
+    .wordmark-sub { font-size: 0.72rem; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase; margin-bottom: 2rem; }
+    .setup-card h2 { font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 400; margin-bottom: 0.75rem; }
+    .setup-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem; line-height: 1.7; }
+    .setup-card a { color: var(--gold); text-decoration: none; }
+
+    /* ── LIBRARY VIEW ── */
+    #view-library { padding-bottom: 3rem; }
+    .library-body { flex: 1; padding: 1.75rem 1.25rem; max-width: 900px; width: 100%; margin: 0 auto; }
+    .library-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem; }
+    .library-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 400; }
+    .library-empty { text-align: center; padding: 4rem 1rem; }
+    .library-empty-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.3; }
+    .library-empty h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 400; margin-bottom: 0.5rem; color: var(--muted); }
+    .library-empty p { font-size: 0.85rem; color: var(--muted); }
+
+    .brief-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .brief-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1.25rem; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .brief-card:hover { border-color: var(--gold); background: #141414; }
+    .brief-card-city { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--gold); margin-bottom: 0.25rem; }
+    .brief-card-meta { font-size: 0.75rem; color: var(--muted); display: flex; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .brief-card-team { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3); border-radius: 3px; padding: 2px 7px; }
+    .brief-card-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .brief-card-delete {
+      background: transparent; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--muted); font-size: 0.75rem; padding: 0.3rem 0.6rem; cursor: pointer;
+      transition: all 0.15s; font-family: 'Inter', sans-serif;
+    }
+    .brief-card-delete:hover { border-color: var(--danger); color: var(--danger); }
+    .brief-card-refresh {
+      background: transparent; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--muted); font-size: 0.75rem; padding: 0.3rem 0.6rem; cursor: pointer;
+      transition: all 0.15s; font-family: 'Inter', sans-serif;
+    }
+    .brief-card-refresh:hover { border-color: var(--gold); color: var(--gold); }
+    .brief-card-view {
+      flex: 1; background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3); border-radius: 6px;
+      color: var(--gold); font-size: 0.78rem; font-weight: 500; padding: 0.3rem 0.6rem;
+      cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; text-align: center;
+    }
+    .brief-card-view:hover { background: rgba(201,168,76,0.25); }
+
+    /* ── FORM VIEW ── */
+    #view-form { padding-bottom: 3rem; }
+    .form-body { flex: 1; padding: 1.75rem 1.25rem; max-width: 640px; width: 100%; margin: 0 auto; }
+    .form-section-label { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; margin-top: 2rem; }
+    .form-section-label:first-child { margin-top: 0; }
+
+    .field { margin-bottom: 1.25rem; }
+    .field label { display: block; font-size: 0.8rem; font-weight: 500; color: #aaa; margin-bottom: 0.45rem; letter-spacing: 0.02em; }
+    .field input, .field textarea {
+      width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.95rem; padding: 0.75rem 1rem;
+      outline: none; transition: border-color 0.2s; -webkit-appearance: none;
+    }
+    .field input:focus, .field textarea:focus { border-color: var(--gold); }
+    .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .field-hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.35rem; }
+    .optional-badge { font-size: 0.65rem; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; margin-left: 6px; vertical-align: middle; }
+
+    .team-toggle { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .team-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.78rem; padding: 0.4rem 0.9rem; cursor: pointer; transition: all 0.15s; }
+    .team-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+    /* Buttons */
+    .btn-primary { width: 100%; background: var(--gold); color: #0a0a0a; border: none; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 1rem; cursor: pointer; transition: opacity 0.2s; margin-top: 0.5rem; }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-ghost { background: transparent; border: 1px solid var(--border); border-radius: 7px; color: var(--muted); font-family: 'Inter', sans-serif; font-size: 0.8rem; padding: 0.45rem 0.9rem; cursor: pointer; transition: all 0.15s; }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-icon { background: transparent; border: 1px solid var(--border); border-radius: 7px; color: var(--muted); font-size: 1rem; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+    .btn-icon:hover { border-color: var(--gold); color: var(--gold); }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+    .cost-note { text-align: center; font-size: 0.72rem; color: var(--muted); margin-top: 0.75rem; }
+
+    /* ── LOADING VIEW ── */
+    #view-loading { align-items: center; justify-content: center; padding: 3rem 2rem; text-align: center; }
+    .loading-inner { max-width: 360px; width: 100%; }
+    .loading-city { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 400; color: var(--gold); margin-bottom: 0.5rem; }
+    .loading-label { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 2.5rem; }
+    .loading-bar-wrap { width: 100%; height: 2px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-bottom: 1.25rem; }
+    .loading-bar { height: 100%; background: var(--gold); border-radius: 2px; width: 0%; transition: width 0.4s ease; }
+    .loading-status { font-size: 0.82rem; color: var(--muted); min-height: 1.4em; }
+    .loading-steps { margin-top: 2rem; text-align: left; display: flex; flex-direction: column; gap: 0.6rem; }
+    .loading-step { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: var(--muted); transition: color 0.3s; }
+    .loading-step.done { color: var(--text); }
+    .loading-step.active { color: var(--gold); }
+    .step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: background 0.3s; }
+    .loading-step.done .step-dot { background: #3d8a4e; }
+    .loading-step.active .step-dot { background: var(--gold); }
+
+    /* ── RESULT VIEW ── */
+    #view-result { padding: 0; }
+    .result-toolbar { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; }
+    .result-city-name { flex: 1; font-size: 0.85rem; font-weight: 500; color: var(--muted); min-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .result-city-name strong { color: var(--text); }
+    .result-frame { border: none; width: 100%; height: 100%; display: block; }
+
+    /* Add Info panel */
+    .add-info-panel { background: var(--surface); border-bottom: 1px solid rgba(201,168,76,0.3); padding: 1rem 1.25rem; flex-shrink: 0; }
+    .add-info-panel textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 0.9rem; padding: 0.75rem 1rem; outline: none; resize: vertical; min-height: 72px; transition: border-color 0.2s; }
+    .add-info-panel textarea:focus { border-color: var(--gold); }
+    .add-info-panel textarea::placeholder { color: var(--muted); }
+    .add-info-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; align-items: center; }
+    .add-info-hint { font-size: 0.72rem; color: var(--muted); margin-left: auto; }
+
+    /* API key field */
+    .api-key-row { display: flex; gap: 0.5rem; align-items: center; }
+    .api-key-row input { flex: 1; font-family: monospace; font-size: 0.82rem; }
+    .key-toggle { background: transparent; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); padding: 0.75rem 0.65rem; cursor: pointer; font-size: 0.85rem; flex-shrink: 0; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(100px); background: #1e1e1e; border: 1px solid var(--danger); color: #e8e8e8; font-size: 0.82rem; padding: 0.75rem 1.25rem; border-radius: 8px; max-width: 90vw; text-align: center; z-index: 999; transition: transform 0.3s ease; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 480px) {
+      .setup-card { padding: 2rem 1.5rem; }
+      .form-body { padding: 1.25rem 1rem; }
+      .loading-city { font-size: 1.6rem; }
+      .library-body { padding: 1.25rem 1rem; }
+      .brief-grid { grid-template-columns: 1fr; }
+    }
+    @supports (padding: max(0px)) {
+      .app-header { padding-left: max(1.25rem, env(safe-area-inset-left)); padding-right: max(1.25rem, env(safe-area-inset-right)); }
+      .form-body, .library-body { padding-left: max(1.25rem, env(safe-area-inset-left)); padding-right: max(1.25rem, env(safe-area-inset-right)); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── SETUP VIEW ── -->
+<div class="view" id="view-setup">
+  <div class="setup-card">
+    <div class="wordmark">By Proper</div>
+    <div class="wordmark-sub">Deal Intelligence</div>
+    <h2>Enter your API key to get started</h2>
+    <p>Generates city intelligence briefs using Claude AI. Your key is stored only in this browser — never sent anywhere except Anthropic's API.<br><br>Get a key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+    <div class="field">
+      <label>Claude API Key</label>
+      <div class="api-key-row">
+        <input type="password" id="setup-key-input" placeholder="sk-ant-..." autocomplete="off" />
+        <button class="key-toggle" onclick="toggleKey('setup-key-input')">👁</button>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveKeyAndContinue()">Continue →</button>
+  </div>
+</div>
+
+<!-- ── LIBRARY VIEW ── -->
+<div class="view" id="view-library">
+  <div class="app-header">
+    <div class="header-brand" onclick="showView('view-library')">
+      By Proper
+      <span>Deal Intelligence</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" style="width:auto;padding:0.45rem 1rem;margin:0;font-size:0.78rem;" onclick="showView('view-form')">+ New Brief</button>
+      <button class="btn-ghost" onclick="showSetup()">Key</button>
+    </div>
+  </div>
+  <div class="library-body">
+    <div class="library-header">
+      <div class="library-title">Saved Briefs</div>
+    </div>
+    <div id="library-grid" class="brief-grid"></div>
+  </div>
+</div>
+
+<!-- ── FORM VIEW ── -->
+<div class="view" id="view-form">
+  <div class="app-header">
+    <div class="header-brand" onclick="showView('view-library')">
+      By Proper
+      <span>Deal Intelligence</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-ghost" onclick="showView('view-library')">← Library</button>
+    </div>
+  </div>
+  <div style="background:var(--gold-dim);border-bottom:1px solid rgba(201,168,76,0.3);padding:0.6rem 1.25rem;display:flex;align-items:center;gap:0.75rem;cursor:pointer;" onclick="showView('view-library')">
+    <span style="color:var(--gold);font-size:0.78rem;font-weight:500;">← Back to Saved Briefs</span>
+  </div>
+  <div class="form-body">
+
+    <div class="form-section-label">Brief for</div>
+    <div class="team-toggle">
+      <button class="team-btn active" data-team="development" onclick="selectTeam(this)">Development</button>
+      <button class="team-btn" data-team="fb" onclick="selectTeam(this)">F&B / Ops</button>
+      <button class="team-btn" data-team="full" onclick="selectTeam(this)">Full Brief</button>
+    </div>
+
+    <div class="field">
+      <label>City <span style="color:#c0392b">*</span></label>
+      <input type="text" id="city" placeholder="Minneapolis, Austin, Nashville…" autocomplete="off" />
+    </div>
+
+    <hr class="divider" />
+    <div class="form-section-label">Site <span class="optional-badge">optional</span></div>
+
+    <div class="field">
+      <label>Address or building name</label>
+      <input type="text" id="site-address" placeholder="20 Washington Ave South" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label>Developer / owner</label>
+      <input type="text" id="developer" placeholder="Chad Tepley, CDT Realty" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label>Building notes <span class="optional-badge">optional</span></label>
+      <textarea id="site-notes" placeholder="Anything you know — era, architect, current state, size…" rows="3"></textarea>
+    </div>
+
+    <hr class="divider" />
+    <div class="form-section-label">Meeting context <span class="optional-badge">optional</span></div>
+    <div class="field">
+      <label>What's the meeting / occasion?</label>
+      <textarea id="meeting-context" placeholder="Dinner with Chad Tepley tomorrow night to pitch Proper as the hotel operator." rows="3"></textarea>
+      <div class="field-hint">Include dinner strategy and talking points in the brief</div>
+    </div>
+
+    <button class="btn-primary" onclick="generateBrief()">Generate Brief</button>
+    <p class="cost-note">~$0.10–0.15 per brief · saved to your library automatically</p>
+
+  </div>
+</div>
+
+<!-- ── LOADING VIEW ── -->
+<div class="view" id="view-loading">
+  <div class="app-header">
+    <div class="header-brand">By Proper <span>Deal Intelligence</span></div>
+  </div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:3rem 2rem;">
+    <div class="loading-inner">
+      <div class="loading-city" id="loading-city">—</div>
+      <div class="loading-label">Researching · Building Brief</div>
+      <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
+      <div class="loading-status" id="loading-status">Starting…</div>
+      <div class="loading-steps">
+        <div class="loading-step" id="step-city"><div class="step-dot"></div>City intelligence</div>
+        <div class="loading-step" id="step-site"><div class="step-dot"></div>Site &amp; developer</div>
+        <div class="loading-step" id="step-hotels"><div class="step-dot"></div>Competitive hotel set</div>
+        <div class="loading-step" id="step-dining"><div class="step-dot"></div>Dining scene &amp; F&amp;B gaps</div>
+        <div class="loading-step" id="step-bizdev"><div class="step-dot"></div>Business development drivers</div>
+        <div class="loading-step" id="step-strategy"><div class="step-dot"></div>Strategy &amp; opportunity framing</div>
+        <div class="loading-step" id="step-html"><div class="step-dot"></div>Building HTML brief</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESULT VIEW ── -->
+<div class="view" id="view-result">
+  <div class="result-toolbar">
+    <div class="result-city-name"><strong id="result-city-label"></strong></div>
+    <button class="btn-ghost" onclick="toggleAddInfo()" id="btn-add-info">+ Add Info</button>
+    <button class="btn-ghost" onclick="refreshCurrentBrief()">↻ Refresh</button>
+    <button class="btn-ghost" onclick="downloadBrief()" title="Download HTML">↓</button>
+    <button class="btn-ghost" onclick="openBriefTab()" title="Open in new tab">⤢</button>
+    <button class="btn-ghost" onclick="showView('view-library')">← Library</button>
+  </div>
+  <div id="add-info-panel" class="add-info-panel" style="display:none;">
+    <textarea id="add-info-input" placeholder="What should be added or updated in this brief? e.g. 'Add the Gasworks site — 1234 Harbour Island Blvd, Tampa waterfront, 180k sqft mixed-use conversion…'"></textarea>
+    <div class="add-info-actions">
+      <button class="btn-primary" style="width:auto;padding:0.5rem 1.25rem;margin:0;font-size:0.82rem;" onclick="submitAddInfo()">Add to Brief →</button>
+      <button class="btn-ghost" onclick="toggleAddInfo()">Cancel</button>
+      <span class="add-info-hint">~$0.10–0.20 · updates brief in place</span>
+    </div>
+  </div>
+  <div style="flex:1;min-height:0;display:flex;">
+    <iframe id="result-frame" class="result-frame"></iframe>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────────────
+  let currentBriefHtml = '';
+  let currentCity = '';
+  let currentBriefId = null;
+  let selectedTeam = 'development';
+
+  // ── Library Storage ───────────────────────────────────────────────────────
+  function getBriefs() {
+    try { return JSON.parse(localStorage.getItem('proper_briefs') || '[]'); } catch { return []; }
+  }
+  function saveBriefs(briefs) {
+    localStorage.setItem('proper_briefs', JSON.stringify(briefs));
+  }
+  function addBrief(city, team, html, inputs, replaceId) {
+    const briefs = getBriefs();
+    const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (replaceId) {
+      const idx = briefs.findIndex(b => b.id === replaceId);
+      if (idx !== -1) { briefs[idx] = { ...briefs[idx], html, date, inputs: inputs || {} }; saveBriefs(briefs); return replaceId; }
+    }
+    const id = Date.now().toString();
+    briefs.unshift({ id, city, team, date, html, inputs: inputs || {} });
+    saveBriefs(briefs);
+    return id;
+  }
+  function deleteBrief(id) {
+    saveBriefs(getBriefs().filter(b => b.id !== id));
+    renderLibrary();
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  (function init() {
+    // Block Enter key on text inputs
+    document.querySelectorAll('input[type="text"], input[type="password"]').forEach(inp => {
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+    });
+
+    // Migrate briefs saved under old localStorage keys
+    const oldHtml = localStorage.getItem('proper_last_brief_html');
+    const oldCity = localStorage.getItem('proper_last_brief_city');
+    if (oldHtml && oldCity) {
+      const existing = getBriefs();
+      const alreadyMigrated = existing.some(b => b.city === oldCity);
+      if (!alreadyMigrated) {
+        addBrief(oldCity, 'full', oldHtml);
+      }
+      localStorage.removeItem('proper_last_brief_html');
+      localStorage.removeItem('proper_last_brief_city');
+    }
+
+    const key = localStorage.getItem('proper_api_key');
+    if (!key) { showView('view-setup'); return; }
+    showView('view-library');
+    renderLibrary();
+  })();
+
+  // ── Library ───────────────────────────────────────────────────────────────
+  function renderLibrary() {
+    const grid = document.getElementById('library-grid');
+    const briefs = getBriefs();
+    if (briefs.length === 0) {
+      grid.innerHTML = `
+        <div class="library-empty" style="grid-column:1/-1">
+          <div class="library-empty-icon">🏙</div>
+          <h3>No briefs yet</h3>
+          <p>Generate your first city brief to get started.</p>
+        </div>`;
+      return;
+    }
+    const teamLabel = { development: 'Development', fb: 'F&B / Ops', full: 'Full Brief' };
+    grid.innerHTML = briefs.map(b => `
+      <div class="brief-card">
+        <div class="brief-card-city">${b.city}</div>
+        <div class="brief-card-meta">
+          <span class="brief-card-team">${teamLabel[b.team] || b.team}</span>
+          <span>${b.date}</span>
+        </div>
+        <div class="brief-card-actions">
+          <button class="brief-card-view" onclick="openBriefById('${b.id}')">Open →</button>
+          <button class="brief-card-refresh" onclick="event.stopPropagation();refreshBrief('${b.id}')">↻ Refresh</button>
+          <button class="brief-card-delete" onclick="event.stopPropagation();confirmDelete('${b.id}','${b.city}')">Delete</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function openBriefById(id) {
+    const brief = getBriefs().find(b => b.id === id);
+    if (!brief) return;
+    loadBriefInViewer(brief);
+    showView('view-result');
+  }
+
+  function loadBriefInViewer(brief) {
+    currentBriefHtml = brief.html;
+    currentCity = brief.city;
+    currentBriefId = brief.id;
+    selectedTeam = brief.team || 'full';
+    const teamLabel = { development: 'Development', fb: 'F&B / Ops', full: 'Full Brief' };
+    document.getElementById('result-city-label').textContent = `${brief.city} — ${teamLabel[brief.team] || 'Brief'}`;
+    document.getElementById('result-frame').srcdoc = brief.html;
+    // Close add-info panel if open
+    document.getElementById('add-info-panel').style.display = 'none';
+    document.getElementById('btn-add-info').textContent = '+ Add Info';
+  }
+
+  function openBriefTab() {
+    if (!currentBriefHtml) return;
+    const blob = new Blob([currentBriefHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }
+
+  function confirmDelete(id, city) {
+    if (confirm(`Delete the ${city} brief? This cannot be undone.`)) deleteBrief(id);
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0, 0);
+    if (id === 'view-library') renderLibrary();
+  }
+  function showSetup() { showView('view-setup'); }
+
+  // ── API Key ───────────────────────────────────────────────────────────────
+  function toggleKey(inputId) {
+    const inp = document.getElementById(inputId);
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+  function saveKeyAndContinue() {
+    const key = document.getElementById('setup-key-input').value.trim();
+    if (!key.startsWith('sk-')) { showToast('That doesn\'t look like a valid Anthropic key.'); return; }
+    localStorage.setItem('proper_api_key', key);
+    showView('view-library');
+    renderLibrary();
+  }
+
+  // ── Team selector ─────────────────────────────────────────────────────────
+  function selectTeam(btn) {
+    document.querySelectorAll('.team-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTeam = btn.dataset.team;
+  }
+
+  // ── Loading steps ─────────────────────────────────────────────────────────
+  const STEPS = ['step-city','step-site','step-hotels','step-dining','step-bizdev','step-strategy','step-html'];
+  let currentStep = 0;
+
+  function advanceStep() {
+    if (currentStep > 0) {
+      document.getElementById(STEPS[currentStep-1])?.classList.replace('active','done');
+    }
+    document.getElementById(STEPS[currentStep])?.classList.add('active');
+    document.getElementById('loading-bar').style.width = (Math.round((currentStep / STEPS.length) * 85) + 5) + '%';
+    currentStep++;
+  }
+  function finishSteps() {
+    STEPS.forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('active'); el.classList.add('done'); } });
+    document.getElementById('loading-bar').style.width = '100%';
+  }
+
+  // ── Generate ──────────────────────────────────────────────────────────────
+  async function generateBrief() {
+    const city = document.getElementById('city').value.trim();
+    if (!city) { showToast('Enter a city name.'); return; }
+
+    const apiKey = localStorage.getItem('proper_api_key');
+    if (!apiKey) { showView('view-setup'); return; }
+
+    const site    = document.getElementById('site-address').value.trim();
+    const dev     = document.getElementById('developer').value.trim();
+    const notes   = document.getElementById('site-notes').value.trim();
+    const meeting = document.getElementById('meeting-context').value.trim();
+    const inputs  = { site, dev, notes, meeting };
+
+    await runGeneration(city, selectedTeam, inputs, null);
+  }
+
+  async function refreshBrief(id) {
+    const brief = getBriefs().find(b => b.id === id);
+    if (!brief) return;
+    const inputs = brief.inputs || {};
+    await runGeneration(brief.city, brief.team, inputs, id);
+  }
+
+  async function runGeneration(city, team, inputs, replaceId) {
+    const apiKey = localStorage.getItem('proper_api_key');
+    if (!apiKey) { showView('view-setup'); return; }
+
+    const { site = '', dev = '', notes = '', meeting = '' } = inputs;
+
+    currentCity = city;
+    selectedTeam = team;
+    currentBriefHtml = '';
+    currentStep = 0;
+    STEPS.forEach(id => { const el = document.getElementById(id); if (el) el.className = 'loading-step'; });
+    document.getElementById('loading-city').textContent = city;
+    document.getElementById('loading-bar').style.width = '0%';
+    document.getElementById('loading-status').textContent = 'Connecting to Claude…';
+    showView('view-loading');
+
+    const teamFocus = {
+      development: 'Emphasize the site, developer profile, competitive landscape, and strategic framing. Include dinner strategy if a meeting is provided.',
+      fb: 'Emphasize the dining scene, F&B gaps, cultural identity, neighborhood energy, and culinary opportunity framing.',
+      full: 'Generate the complete brief — full depth on site, hotels, dining, neighborhoods, and strategy.'
+    }[team] || '';
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 8192,
+          stream: true,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: buildPrompt(city, site, dev, notes, meeting, teamFocus) }]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `API error ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '', charCount = 0;
+
+      advanceStep();
+      document.getElementById('loading-status').textContent = 'Researching city culture and identity…';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const evt = JSON.parse(data);
+            if (evt.type === 'content_block_delta' && evt.delta?.text) {
+              currentBriefHtml += evt.delta.text;
+              charCount += evt.delta.text.length;
+              if (currentStep === 1 && charCount > 400)  { advanceStep(); document.getElementById('loading-status').textContent = 'Profiling the site and developer…'; }
+              if (currentStep === 2 && charCount > 1200) { advanceStep(); document.getElementById('loading-status').textContent = 'Mapping the hotel competitive set…'; }
+              if (currentStep === 3 && charCount > 2400) { advanceStep(); document.getElementById('loading-status').textContent = 'Analyzing the dining scene…'; }
+              if (currentStep === 4 && charCount > 3800) { advanceStep(); document.getElementById('loading-status').textContent = 'Framing the Proper opportunity…'; }
+              if (currentStep === 5 && charCount > 5200) { advanceStep(); document.getElementById('loading-status').textContent = 'Assembling the brief…'; }
+            }
+          } catch (_) {}
+        }
+      }
+
+      finishSteps();
+
+      // Clean up HTML
+      let html = currentBriefHtml.trim();
+      const match = html.match(/```html\s*([\s\S]*?)```/);
+      if (match) html = match[1].trim();
+      const idx = html.indexOf('<!DOCTYPE');
+      if (idx > 0) html = html.slice(idx);
+      currentBriefHtml = html;
+
+      // Save to library (overwrite if refreshing)
+      const savedId = addBrief(city, team, html, inputs, replaceId);
+      currentBriefId = savedId;
+
+      await new Promise(r => setTimeout(r, 300));
+      renderResult(city);
+
+    } catch (err) {
+      showView('view-library');
+      showToast(err.message || 'Something went wrong. Check your API key.');
+    }
+  }
+
+  // ── Result ────────────────────────────────────────────────────────────────
+  function renderResult(city) {
+    const brief = getBriefs().find(b => b.id === currentBriefId);
+    if (brief) loadBriefInViewer(brief);
+    showView('view-result');
+  }
+
+  function refreshCurrentBrief() {
+    if (!currentBriefId) return;
+    refreshBrief(currentBriefId);
+  }
+
+  function toggleAddInfo() {
+    const panel = document.getElementById('add-info-panel');
+    const btn = document.getElementById('btn-add-info');
+    const open = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    btn.textContent = open ? '✕ Cancel' : '+ Add Info';
+    if (open) document.getElementById('add-info-input').focus();
+  }
+
+  async function submitAddInfo() {
+    const addText = document.getElementById('add-info-input').value.trim();
+    if (!addText) { showToast('Enter what you want to add.'); return; }
+    if (!currentBriefHtml) { showToast('No brief loaded.'); return; }
+
+    const apiKey = localStorage.getItem('proper_api_key');
+    if (!apiKey) { showView('view-setup'); return; }
+
+    // Reuse loading view
+    currentStep = 0;
+    STEPS.forEach(id => { const el = document.getElementById(id); if (el) el.className = 'loading-step'; });
+    document.getElementById('loading-city').textContent = currentCity;
+    document.getElementById('loading-bar').style.width = '0%';
+    document.getElementById('loading-status').textContent = 'Adding to brief…';
+    showView('view-loading');
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 8192,
+          stream: true,
+          system: AUGMENT_PROMPT,
+          messages: [{ role: 'user', content: `EXISTING BRIEF HTML:\n\n${currentBriefHtml}\n\n---\n\nNEW INFORMATION TO ADD:\n${addText}` }]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `API error ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '', newHtml = '', charCount = 0;
+
+      advanceStep();
+      document.getElementById('loading-status').textContent = 'Integrating new information…';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const evt = JSON.parse(data);
+            if (evt.type === 'content_block_delta' && evt.delta?.text) {
+              newHtml += evt.delta.text;
+              charCount += evt.delta.text.length;
+              if (currentStep === 1 && charCount > 800)  { advanceStep(); document.getElementById('loading-status').textContent = 'Updating sections…'; }
+              if (currentStep === 2 && charCount > 2000) { advanceStep(); document.getElementById('loading-status').textContent = 'Rebuilding brief…'; }
+              if (currentStep === 3 && charCount > 4000) { advanceStep(); document.getElementById('loading-status').textContent = 'Finalizing…'; }
+            }
+          } catch (_) {}
+        }
+      }
+
+      finishSteps();
+
+      // Clean up
+      let html = newHtml.trim();
+      const match = html.match(/```html\s*([\s\S]*?)```/);
+      if (match) html = match[1].trim();
+      const idx = html.indexOf('<!DOCTYPE');
+      if (idx > 0) html = html.slice(idx);
+      currentBriefHtml = html;
+
+      // Save over existing brief, preserve original inputs
+      const existing = getBriefs().find(b => b.id === currentBriefId);
+      addBrief(currentCity, selectedTeam, html, existing?.inputs || {}, currentBriefId);
+
+      document.getElementById('add-info-input').value = '';
+      await new Promise(r => setTimeout(r, 300));
+      renderResult(currentCity);
+
+    } catch (err) {
+      showView('view-result');
+      showToast(err.message || 'Something went wrong.');
+    }
+  }
+
+  function downloadBrief() {
+    if (!currentBriefHtml) return;
+    const slug = currentCity.toLowerCase().replace(/\s+/g, '-');
+    const blob = new Blob([currentBriefHtml], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `proper-brief-${slug}.html`;
+    a.click();
+  }
+
+  // ── Prompt builder ────────────────────────────────────────────────────────
+  function buildPrompt(city, site, dev, notes, meeting, teamFocus) {
+    let p = `Generate a full deal intelligence brief for: **${city}**\n\n`;
+    if (site)      p += `Site: ${site}\n`;
+    if (dev)       p += `Developer: ${dev}\n`;
+    if (notes)     p += `Building notes: ${notes}\n`;
+    if (meeting)   p += `\nMeeting context: ${meeting}\n`;
+    if (teamFocus) p += `\nFocus: ${teamFocus}\n`;
+    p += `\nOutput the complete HTML file only. No explanation before or after. Start with <!DOCTYPE html>.`;
+    return p;
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  // ── System Prompt ─────────────────────────────────────────────────────────
+  const SYSTEM_PROMPT = `You are the intelligence engine behind "By Proper Deal Brief" — a tool used by Proper Hotels' development and F&B teams to prepare for meetings with developers and evaluate new markets.
+
+## Your Output
+Generate a single, self-contained HTML file — a 5-tab mobile-optimized intelligence brief. Output ONLY the HTML. No commentary before or after.
+
+## Design Spec
+- Background: #0a0a0a | Accent: #c9a84c (dark gold) | Secondary: #999
+- Fonts: Playfair Display (headers) + Inter (body) via Google Fonts
+- Sticky header: property name + city
+- Scrollable tab bar, touch-friendly (min 44px tap targets)
+- Cards with subtle gold-left border (#c9a84c) for key facts
+- Class .highlight { background: rgba(201,168,76,0.12); border-left: 3px solid #c9a84c; padding: 0.6rem 0.9rem; border-radius: 4px; margin: 0.75rem 0; } for lines to memorize
+- Auto-scroll to top on tab change
+- Fully responsive, optimized for phone in low light
+
+## Required Tab Navigation JavaScript
+You MUST include this exact tab switching pattern in your <script> block. Tabs will not work without it:
+
+```
+const TAB_IDS = ['site','city','neighborhoods','hotels','dining','bizdev'];
+
+function switchTab(id) {
+  TAB_IDS.forEach(t => {
+    const content = document.getElementById('tab-' + t);
+    const btn = document.getElementById('btn-' + t);
+    if (content) content.style.display = (t === id) ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', t === id);
+  });
+  window.scrollTo(0, 0);
+}
+
+document.addEventListener('DOMContentLoaded', function() { switchTab('site'); });
+```
+
+Each tab button must have id="btn-{tabid}" and onclick="switchTab('{tabid}')".
+Each tab content panel must have id="tab-{tabid}" and style="display:none".
+Tab IDs must be exactly: site, city, neighborhoods, hotels, dining, bizdev.
+
+## Tab Structure
+1. **The Site** — building specs, architect biography & legacy, developer profile & emotional investment, opening lines for dinner conversation, seed question. If no site provided, replace with "The Opportunity" — Proper's strategic thesis for this market.
+2. **The City** — cultural origin story, ethnic/immigrant history, music & arts legacy, what locals know that outsiders don't, current momentum signals
+3. **Neighborhoods** — 2–3 priority areas driving lifestyle energy now, what's opening, foot traffic profile
+4. **Hotels** — full competitive set, star rating ceiling, flag Four Seasons/Aman/1 Hotel/Auberge/Rosewood specifically, gap analysis
+5. **Dining** — power players (who is the Gavin Kaysen of this city?), rising names, 2024–2025 James Beard activity, cultural depth, F&B opportunity framing
+6. **Business Development** — Two sections:
+   CORPORATE DEMAND: Major corporate HQs and office clusters within 1–3 miles, Fortune 500 or notable company presence, convention center name/size/annual events/peak periods, medical centers and hospital systems, universities and their event/graduation calendars. Flag which industries dominate (tech, finance, energy, healthcare, etc.) and what that means for rate potential and booking patterns.
+   LEISURE DEMAND: Pro sports teams and their seasons/stadiums, major annual festivals and their attendance, music venues and touring patterns, museums and cultural institutions, proximity to tourism draws. Identify the top 3 leisure demand periods for the city by month. Flag any demand that is currently UNSERVED by existing luxury/lifestyle hotels.
+
+## Content Standards
+- Write as a local expert, not a researcher summarizing sources
+- Present tense, active voice. No hedging ("seems to," "appears to be")
+- Short paragraphs — white space is a feature
+- Label callouts: "FOR THE F&B TEAM:" and "FOR THE DEVELOPMENT TEAM:" where relevant
+- The Site tab = briefing document with stakes and emotion, not a Wikipedia article
+
+## Dinner Strategy (include when meeting context is provided)
+- Opening move (lead with the building/city, not the brand)
+- The pivot line (from observation to opportunity)
+- The seed question (one question for the developer to answer that opens the door)
+- What to avoid
+- One fact to know cold — formatted as .highlight
+
+## Brand Context
+- Proper Hotels: independent lifestyle brand (SF, Santa Monica, Austin, new developments)
+- Core thesis: Proper is a DESTINATION THAT HAPPENS TO HAVE ROOMS — F&B is the identity
+- La Piscina (Austin) = internal proof that hotel restaurant draws non-hotel crowd and drives neighborhood identity
+- Proper competes on curation, programming, and cultural specificity — NOT food execution vs. four-star machines
+- The crack in the luxury anchor's armor: they have no local point of view BY DESIGN
+
+## Minneapolis Reference (match this depth)
+Site: 20 Washington Ave S — 220k sqft, 1965, Minoru Yamasaki (World Trade Center architect), 63 Gothic columns, Vermont verde antique marble, two reflective pools. Developer: Chad Tepley, CDT Realty — 11 months obsessed, ~100 calls to investors, emotionally bonded, not transactional. Dining: Gavin Kaysen locked by Four Seasons → Proper's move: Daniel del Prado, Yia Vang (Hmong heritage), Bûcheron (James Beard Best New Restaurant 2025). Cultural thread: Minneapolis Sound = Scandinavian music education + Black music moving up the Mississippi. Hotel gap: Four Seasons only 5-star in ALL of Minnesota. Hewing Hotel proved lifestyle appetite but a decade old with thin F&B.`;
+
+  // ── Augment Prompt ────────────────────────────────────────────────────────
+  const AUGMENT_PROMPT = `You are updating an existing "By Proper Deal Brief" HTML file with new information provided by the user.
+
+## Your job
+- Integrate the new information naturally into the relevant tabs of the existing brief
+- Do NOT remove or overwrite any existing content — only add, enhance, or correct
+- If a site is being added for the first time, populate "The Site" tab fully (building specs, architect, developer profile, dinner strategy if context given)
+- If new dining, hotel, or neighborhood intel is provided, weave it into the relevant tab
+- Maintain the exact same visual design, CSS, tab structure, and JavaScript as the original
+- Return the complete updated HTML file only — no commentary before or after, starting with <!DOCTYPE html>`;
+</script>
+</body>
+</html>
