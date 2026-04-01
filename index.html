@@ -421,9 +421,11 @@
     selectedTeam = brief.team || 'full';
     const teamLabel = { development: 'Development', fb: 'F&B / Ops', full: 'Full Brief' };
     document.getElementById('result-city-label').textContent = `${brief.city} — ${teamLabel[brief.team] || 'Brief'}`;
-    document.getElementById('result-frame').srcdoc = injectTabFixer(brief.html);
     document.getElementById('add-info-panel').style.display = 'none';
     document.getElementById('btn-add-info').textContent = '+ Add Info';
+    const frame = document.getElementById('result-frame');
+    frame.onload = function() { patchIframeTabs(frame); };
+    frame.srcdoc = brief.html;
   }
 
   function openBriefTab() {
@@ -746,31 +748,64 @@
   }
 
   // ── Tab Fixer ─────────────────────────────────────────────────────────────
-  function injectTabFixer(html) {
-    const script = `<script>
-(function(){
-  // Override switchTab with a guaranteed working version
-  window.switchTab = function(id) {
-    document.querySelectorAll('[id^="tab-"]').forEach(function(el) {
-      el.style.display = el.id === 'tab-' + id ? 'block' : 'none';
-    });
-    document.querySelectorAll('[id^="btn-"]').forEach(function(el) {
-      el.classList.toggle('active', el.id === 'btn-' + id);
-    });
-    window.scrollTo(0, 0);
-  };
-  // Activate first tab on load
-  document.addEventListener('DOMContentLoaded', function() {
-    var first = document.querySelector('[id^="btn-"]');
-    if (first) switchTab(first.id.replace('btn-', ''));
-  });
-  // Also run now in case DOMContentLoaded already fired
-  var first = document.querySelector('[id^="btn-"]');
-  if (first) switchTab(first.id.replace('btn-', ''));
-})();
-<\/script>`;
-    if (html.includes('</body>')) return html.replace('</body>', script + '</body>');
-    return html + script;
+  function injectTabFixer(html) { return html; } // patching done via iframe.onload
+
+  function patchIframeTabs(frame) {
+    try {
+      const doc = frame.contentDocument;
+      const win = frame.contentWindow;
+
+      // Find panels — try multiple selector patterns Claude might use
+      const panelCandidates = [
+        '[id^="tab-"]', '.tab-content', '.tab-panel', '.tab-pane',
+        'section[id]', '.content-section', '[data-tab-content]'
+      ];
+      let panels = [];
+      for (const sel of panelCandidates) {
+        const found = Array.from(doc.querySelectorAll(sel));
+        if (found.length >= 3) { panels = found; break; }
+      }
+
+      // Find buttons — try multiple selector patterns
+      const btnCandidates = [
+        '[id^="btn-"]', '.tab-btn', '.tab-button', '.tab-link',
+        '.nav-tab', '.nav-item', '[data-tab]', '[role="tab"]',
+        'button[onclick*="tab"]', 'a[onclick*="tab"]', 'button[onclick*="Tab"]'
+      ];
+      let btns = [];
+      for (const sel of btnCandidates) {
+        const found = Array.from(doc.querySelectorAll(sel));
+        if (found.length >= 3) { btns = found; break; }
+      }
+
+      if (panels.length === 0 || btns.length === 0) return;
+
+      // Define index-based showTab on the iframe window
+      win.showTab = function(n) {
+        panels.forEach((p, i) => p.style.display = i === n ? 'block' : 'none');
+        btns.forEach((b, i) => b.classList.toggle('active', i === n));
+        win.scrollTo(0, 0);
+      };
+      // Also cover string-based switchTab
+      win.switchTab = function(id) {
+        const n = panels.findIndex(p => p.id === 'tab-' + id);
+        win.showTab(n >= 0 ? n : 0);
+      };
+
+      // Rewire every button's click directly
+      btns.forEach((btn, i) => {
+        btn.style.cursor = 'pointer';
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          win.showTab(i);
+        });
+      });
+
+      // Activate first tab
+      win.showTab(0);
+    } catch (e) {
+      console.warn('Tab patch failed:', e);
+    }
   }
 
   // ── Toast ─────────────────────────────────────────────────────────────────
