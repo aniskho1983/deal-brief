@@ -421,8 +421,7 @@
     selectedTeam = brief.team || 'full';
     const teamLabel = { development: 'Development', fb: 'F&B / Ops', full: 'Full Brief' };
     document.getElementById('result-city-label').textContent = `${brief.city} — ${teamLabel[brief.team] || 'Brief'}`;
-    document.getElementById('result-frame').srcdoc = brief.html;
-    // Close add-info panel if open
+    document.getElementById('result-frame').srcdoc = injectTabFixer(brief.html);
     document.getElementById('add-info-panel').style.display = 'none';
     document.getElementById('btn-add-info').textContent = '+ Add Info';
   }
@@ -593,6 +592,7 @@
       if (match) html = match[1].trim();
       const idx = html.indexOf('<!DOCTYPE');
       if (idx > 0) html = html.slice(idx);
+      html = injectTabFixer(html);
       currentBriefHtml = html;
 
       // Save to library (overwrite if refreshing)
@@ -706,6 +706,7 @@
       if (match) html = match[1].trim();
       const idx = html.indexOf('<!DOCTYPE');
       if (idx > 0) html = html.slice(idx);
+      html = injectTabFixer(html);
       currentBriefHtml = html;
 
       // Save over existing brief, preserve original inputs
@@ -742,6 +743,34 @@
     if (teamFocus) p += `\nFocus: ${teamFocus}\n`;
     p += `\nOutput the complete HTML file only. No explanation before or after. Start with <!DOCTYPE html>.`;
     return p;
+  }
+
+  // ── Tab Fixer ─────────────────────────────────────────────────────────────
+  function injectTabFixer(html) {
+    const script = `<script>
+(function(){
+  // Override switchTab with a guaranteed working version
+  window.switchTab = function(id) {
+    document.querySelectorAll('[id^="tab-"]').forEach(function(el) {
+      el.style.display = el.id === 'tab-' + id ? 'block' : 'none';
+    });
+    document.querySelectorAll('[id^="btn-"]').forEach(function(el) {
+      el.classList.toggle('active', el.id === 'btn-' + id);
+    });
+    window.scrollTo(0, 0);
+  };
+  // Activate first tab on load
+  document.addEventListener('DOMContentLoaded', function() {
+    var first = document.querySelector('[id^="btn-"]');
+    if (first) switchTab(first.id.replace('btn-', ''));
+  });
+  // Also run now in case DOMContentLoaded already fired
+  var first = document.querySelector('[id^="btn-"]');
+  if (first) switchTab(first.id.replace('btn-', ''));
+})();
+<\/script>`;
+    if (html.includes('</body>')) return html.replace('</body>', script + '</body>');
+    return html + script;
   }
 
   // ── Toast ─────────────────────────────────────────────────────────────────
