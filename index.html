@@ -773,9 +773,7 @@ Generate a single, self-contained HTML file — a 5-tab mobile-optimized intelli
 ## Required Tab Navigation JavaScript
 You MUST include this exact tab switching pattern in your <script> block. Tabs will not work without it:
 
-```
 const TAB_IDS = ['site','city','neighborhoods','hotels','dining','bizdev'];
-
 function switchTab(id) {
   TAB_IDS.forEach(t => {
     const content = document.getElementById('tab-' + t);
@@ -785,9 +783,7 @@ function switchTab(id) {
   });
   window.scrollTo(0, 0);
 }
-
 document.addEventListener('DOMContentLoaded', function() { switchTab('site'); });
-```
 
 Each tab button must have id="btn-{tabid}" and onclick="switchTab('{tabid}')".
 Each tab content panel must have id="tab-{tabid}" and style="display:none".
